@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { getBezierPath } from 'reactflow';
 
 export default function WireEdge({
@@ -11,8 +11,12 @@ export default function WireEdge({
   targetPosition,
   data = {},
   style = {},
-  markerEnd
+  markerEnd,
+  selected = false
 }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Enhanced Bézier path calculation with improved curvature
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -20,29 +24,60 @@ export default function WireEdge({
     targetX,
     targetY,
     targetPosition,
+    curvature: 0.15 // Smoother curves
   });
 
-  // Determine current intensity for animation speed
+  // Determine current intensity for animation and styling
   const currentMagnitude = Math.abs(data.current || 0);
+  const voltage = data.voltage || 0;
+  
   const intensity = currentMagnitude > 0.1 ? 'high' : 
                    currentMagnitude > 0.01 ? 'medium' : 'low';
 
   // Animation speed based on current
-  const animSpeed = currentMagnitude > 0.1 ? 0.5 : 
-                   currentMagnitude > 0.01 ? 1.0 : 2.0;
+  const animSpeed = currentMagnitude > 0.1 ? 0.8 : 
+                   currentMagnitude > 0.01 ? 1.5 : 3.0;
+
+  // Professional wire styling
+  const wireColor = selected ? '#2563EB' : '#16A34A';
+  const wireWidth = selected || isHovered ? 4 : 3;
+  const glowIntensity = isHovered ? 0.8 : selected ? 0.6 : 0.3;
 
   return (
-    <g className={`wire-edge wire-current-${intensity}`}>
-      {/* Main wire path */}
+    <g 
+      className={`wire-edge wire-current-${intensity} ${selected ? 'selected' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Glow effect layer */}
+      <path
+        d={edgePath}
+        style={{
+          stroke: wireColor,
+          strokeWidth: wireWidth + 4,
+          opacity: glowIntensity * 0.3,
+          fill: 'none',
+          filter: 'blur(2px)',
+          transition: 'all 0.2s ease-in-out'
+        }}
+      />
+
+      {/* Main wire path with professional styling */}
       <path
         id={id}
         d={edgePath}
         className="wire-path"
         style={{
           ...style,
-          stroke: data.voltage > 5 ? '#ef4444' : 
-                 data.voltage > 1 ? '#f59e0b' : '#22c55e',
-          strokeWidth: Math.max(2, Math.min(6, 2 + currentMagnitude * 2))
+          stroke: wireColor,
+          strokeWidth: wireWidth,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          fill: 'none',
+          cursor: 'pointer',
+          filter: selected || isHovered ? 
+            `drop-shadow(0 0 ${glowIntensity * 8}px ${wireColor}40)` : 'none',
+          transition: 'all 0.2s ease-in-out'
         }}
         markerEnd={markerEnd}
       />
@@ -53,37 +88,99 @@ export default function WireEdge({
           d={edgePath}
           className="wire-anim"
           style={{
-            stroke: intensity === 'high' ? '#ef4444' : 
-                   intensity === 'medium' ? '#f59e0b' : '#ffffff',
-            strokeWidth: Math.max(1, Math.min(3, 1 + currentMagnitude)),
-            strokeDasharray: `${8} ${8}`,
-            animationDuration: `${animSpeed}s`
+            stroke: intensity === 'high' ? '#EF4444' : 
+                   intensity === 'medium' ? '#F59E0B' : '#FFFFFF',
+            strokeWidth: Math.max(1, Math.min(2, wireWidth - 1)),
+            strokeLinecap: 'round',
+            strokeDasharray: `${6} ${12}`,
+            strokeDashoffset: 0,
+            fill: 'none',
+            opacity: 0.8,
+            animation: `wire-flow ${animSpeed}s linear infinite`,
+            transition: 'all 0.2s ease-in-out'
           }}
         />
       )}
 
-      {/* Current/Voltage label */}
-      {(data.current || data.voltage) && (
+      {/* Junction dots for enhanced visualization */}
+      <circle
+        cx={sourceX}
+        cy={sourceY}
+        r={selected || isHovered ? 3 : 2}
+        fill={wireColor}
+        stroke="#F6F8FA"
+        strokeWidth="1"
+        style={{
+          transition: 'all 0.2s ease-in-out',
+          filter: selected || isHovered ? 
+            `drop-shadow(0 2px 4px ${wireColor}40)` : 'none'
+        }}
+      />
+      <circle
+        cx={targetX}
+        cy={targetY}
+        r={selected || isHovered ? 3 : 2}
+        fill={wireColor}
+        stroke="#F6F8FA"
+        strokeWidth="1"
+        style={{
+          transition: 'all 0.2s ease-in-out',
+          filter: selected || isHovered ? 
+            `drop-shadow(0 2px 4px ${wireColor}40)` : 'none'
+        }}
+      />
+
+      {/* Enhanced current/voltage label */}
+      {(data.current || data.voltage) && (isHovered || selected) && (
         <foreignObject
-          x={labelX - 30}
-          y={labelY - 12}
-          width="60"
-          height="24"
+          x={labelX - 40}
+          y={labelY - 16}
+          width="80"
+          height="32"
           className="wire-label"
         >
-          <div className="glass" style={{ 
-            padding: '2px 6px', 
-            fontSize: '10px', 
+          <div style={{ 
+            padding: '4px 8px', 
+            fontSize: '11px', 
             textAlign: 'center',
-            borderRadius: '4px',
-            background: 'rgba(0,0,0,0.7)',
-            color: '#ffffff',
-            border: '1px solid rgba(34, 197, 94, 0.3)'
+            borderRadius: '8px',
+            background: 'rgba(255, 255, 255, 0.95)',
+            color: '#374151',
+            border: `1px solid ${wireColor}40`,
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+            backdropFilter: 'blur(8px)',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+            fontWeight: '500'
           }}>
-            {data.current !== undefined && `${data.current.toFixed(3)}A`}
-            {data.voltage !== undefined && ` ${data.voltage.toFixed(2)}V`}
+            {data.current !== undefined && (
+              <div style={{ color: '#16A34A', fontFamily: 'Monaco, Consolas, monospace' }}>
+                {data.current.toFixed(3)}A
+              </div>
+            )}
+            {data.voltage !== undefined && (
+              <div style={{ color: '#2563EB', fontFamily: 'Monaco, Consolas, monospace' }}>
+                {data.voltage.toFixed(2)}V
+              </div>
+            )}
           </div>
         </foreignObject>
+      )}
+
+      {/* Net ID indicator for debugging/development */}
+      {data.netId && (selected || isHovered) && (
+        <text
+          x={labelX}
+          y={labelY - 25}
+          textAnchor="middle"
+          style={{
+            fontSize: '9px',
+            fill: '#6B7280',
+            fontFamily: 'Monaco, Consolas, monospace',
+            fontWeight: '500'
+          }}
+        >
+          {data.netId}
+        </text>
       )}
     </g>
   );

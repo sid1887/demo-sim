@@ -4,7 +4,18 @@ python-multipart
 pydantic
 requests
 python-dotenv
-# Optional / advanced
+
+# Circuit Simulation
 PySpice
-# google-genai (or google-genai equivalent) - install when ready
-# google-genai
+
+# AI and Vision Processing
+google-genai
+
+# Optional: Enhanced Vision Processing (YOLOv8 + OpenCV)
+# Uncomment these lines if you have compatible GCC/build tools:
+# opencv-python>=4.8.0
+# ultralytics>=8.1.0
+# numpy>=1.24.0
+
+# Alternative: Use pre-compiled binaries if available
+# opencv-python-headless>=4.8.0  # Smaller package without GUI components

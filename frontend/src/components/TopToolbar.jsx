@@ -9,77 +9,43 @@ import {
   FolderOpen, 
   FileText,
   Settings,
-  ChevronDown
+  ChevronDown,
+  Undo,
+  Redo,
+  Grid
 } from 'lucide-react';
 
 const MENU_ITEMS = [
   {
     name: 'File',
     items: [
-      { name: 'New Circuit', shortcut: 'Ctrl+N' },
-      { name: 'Open...', shortcut: 'Ctrl+O' },
-      { name: 'Save', shortcut: 'Ctrl+S' },
-      { name: 'Save As...', shortcut: 'Ctrl+Shift+S' },
+      { name: 'New Circuit', shortcut: 'Ctrl+N', action: 'new' },
+      { name: 'Open...', shortcut: 'Ctrl+O', action: 'open' },
+      { name: 'Save', shortcut: 'Ctrl+S', action: 'save' },
+      { name: 'Save As...', shortcut: 'Ctrl+Shift+S', action: 'saveAs' },
       { separator: true },
-      { name: 'Export...', shortcut: 'Ctrl+E' },
-      { name: 'Import...', shortcut: 'Ctrl+I' },
+      { name: 'Export...', shortcut: 'Ctrl+E', action: 'export' },
     ]
   },
   {
     name: 'Edit',
     items: [
-      { name: 'Undo', shortcut: 'Ctrl+Z' },
-      { name: 'Redo', shortcut: 'Ctrl+Y' },
+      { name: 'Undo', shortcut: 'Ctrl+Z', action: 'undo' },
+      { name: 'Redo', shortcut: 'Ctrl+Y', action: 'redo' },
       { separator: true },
-      { name: 'Cut', shortcut: 'Ctrl+X' },
-      { name: 'Copy', shortcut: 'Ctrl+C' },
-      { name: 'Paste', shortcut: 'Ctrl+V' },
-      { name: 'Delete', shortcut: 'Del' },
-      { separator: true },
-      { name: 'Select All', shortcut: 'Ctrl+A' },
+      { name: 'Cut', shortcut: 'Ctrl+X', action: 'cut' },
+      { name: 'Copy', shortcut: 'Ctrl+C', action: 'copy' },
+      { name: 'Paste', shortcut: 'Ctrl+V', action: 'paste' },
     ]
   },
   {
     name: 'View',
     items: [
-      { name: 'Zoom In', shortcut: 'Ctrl++' },
-      { name: 'Zoom Out', shortcut: 'Ctrl+-' },
-      { name: 'Zoom to Fit', shortcut: 'Ctrl+0' },
-      { name: 'Actual Size', shortcut: 'Ctrl+1' },
+      { name: 'Zoom In', shortcut: 'Ctrl++', action: 'zoomIn' },
+      { name: 'Zoom Out', shortcut: 'Ctrl+-', action: 'zoomOut' },
+      { name: 'Zoom to Fit', shortcut: 'Ctrl+0', action: 'fitView' },
       { separator: true },
-      { name: 'Grid', shortcut: 'Ctrl+G', toggle: true },
-      { name: 'Snap to Grid', shortcut: 'Ctrl+Shift+G', toggle: true },
-    ]
-  },
-  {
-    name: 'Simulate',
-    items: [
-      { name: 'Start Simulation', shortcut: 'F5' },
-      { name: 'Stop Simulation', shortcut: 'Shift+F5' },
-      { name: 'Reset Simulation', shortcut: 'Ctrl+F5' },
-      { separator: true },
-      { name: 'DC Analysis', shortcut: 'Ctrl+D' },
-      { name: 'AC Analysis', shortcut: 'Ctrl+A' },
-      { name: 'Transient Analysis', shortcut: 'Ctrl+T' },
-    ]
-  },
-  {
-    name: 'Tools',
-    items: [
-      { name: 'Component Properties...', shortcut: 'F4' },
-      { name: 'Circuit Properties...', shortcut: 'Ctrl+F4' },
-      { separator: true },
-      { name: 'Preferences...', shortcut: 'Ctrl+P' },
-    ]
-  },
-  {
-    name: 'Help',
-    items: [
-      { name: 'Getting Started' },
-      { name: 'User Guide' },
-      { name: 'Component Reference' },
-      { separator: true },
-      { name: 'About CircuitSim' },
+      { name: 'Toggle Grid', shortcut: 'Ctrl+G', action: 'toggleGrid' },
     ]
   }
 ];
@@ -92,7 +58,8 @@ export default function TopToolbar({
   onZoomOut,
   onFitView,
   onSave,
-  onOpen 
+  onOpen,
+  currentFileName = 'untitled.circuit'
 }) {
   const [activeMenu, setActiveMenu] = useState(null);
 
@@ -101,169 +68,160 @@ export default function TopToolbar({
   };
 
   const handleMenuItemClick = (item) => {
-    console.log('Menu item clicked:', item.name);
     setActiveMenu(null);
     
     // Handle menu actions
-    switch (item.name) {
-      case 'Start Simulation':
-        onSimulate?.();
-        break;
-      case 'Reset Simulation':
-        onReset?.();
-        break;
-      case 'Zoom In':
-        onZoomIn?.();
-        break;
-      case 'Zoom Out':
-        onZoomOut?.();
-        break;
-      case 'Zoom to Fit':
-        onFitView?.();
-        break;
-      case 'Save':
+    switch (item.action) {
+      case 'save':
         onSave?.();
         break;
-      case 'Open...':
+      case 'open':
         onOpen?.();
         break;
+      case 'zoomIn':
+        onZoomIn?.();
+        break;
+      case 'zoomOut':
+        onZoomOut?.();
+        break;
+      case 'fitView':
+        onFitView?.();
+        break;
+      default:
+        console.log('Menu action:', item.action);
     }
   };
 
   return (
-    <div className="bg-gray-100 border-b border-gray-300">
-      {/* Menu Bar */}
-      <div className="flex items-center px-4 py-1 border-b border-gray-200">
-        <div className="flex items-center space-x-1 mr-8">
-          <div className="text-lg font-bold text-blue-600">CircuitSim</div>
-          <div className="text-xs text-gray-500">Professional</div>
-        </div>
-
-        <div className="flex items-center space-x-1">
-          {MENU_ITEMS.map((menu) => (
-            <div key={menu.name} className="relative">
-              <button
-                onClick={() => handleMenuClick(menu.name)}
-                className={`px-3 py-1.5 text-sm rounded-md transition-colors
-                          ${activeMenu === menu.name 
-                            ? 'bg-blue-500 text-white' 
-                            : 'hover:bg-gray-200 text-gray-700'
-                          }`}
-              >
-                {menu.name}
-              </button>
-
-              {/* Dropdown Menu */}
-              {activeMenu === menu.name && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-300 
-                              rounded-md shadow-lg z-50">
-                  {menu.items.map((item, index) => {
-                    if (item.separator) {
-                      return <div key={index} className="border-t border-gray-200 my-1" />;
-                    }
-
-                    return (
-                      <button
-                        key={item.name}
-                        onClick={() => handleMenuItemClick(item)}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 
-                                 hover:text-blue-600 flex items-center justify-between"
-                      >
-                        <span>{item.name}</span>
-                        {item.shortcut && (
-                          <span className="text-xs text-gray-400">{item.shortcut}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+    <>
+      {/* Compact Top Bar - 48px height */}
+      <header className="h-12 flex items-center px-4 bg-white shadow-sm border-b border-slate-200">
+        {/* Left: Logo + File Menu */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center">
+              <span className="text-white text-xs font-bold">CS</span>
             </div>
-          ))}
-        </div>
-      </div>
+            <span className="text-sm font-semibold text-slate-900">CircuitSim</span>
+            <span className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Professional</span>
+          </div>
+          
+          {/* File Menu Dropdown */}
+          <div className="flex items-center">
+            {MENU_ITEMS.map((menu) => (
+              <div key={menu.name} className="relative">
+                <button
+                  onClick={() => handleMenuClick(menu.name)}
+                  className={`px-2 py-1 text-sm rounded hover:bg-slate-100 transition-colors ${
+                    activeMenu === menu.name ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                  }`}
+                >
+                  {menu.name}
+                </button>
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2">
-        {/* File Operations */}
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={onOpen}
-            className="toolbar-btn" 
-            title="Open Circuit (Ctrl+O)"
-          >
-            <FolderOpen size={16} />
-          </button>
-          <button 
-            onClick={onSave}
-            className="toolbar-btn" 
-            title="Save Circuit (Ctrl+S)"
-          >
-            <Save size={16} />
-          </button>
-          <div className="w-px h-6 bg-gray-300 mx-2" />
-        </div>
+                {/* Dropdown Menu */}
+                {activeMenu === menu.name && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 
+                                rounded-lg shadow-lg z-50 py-1">
+                    {menu.items.map((item, index) => {
+                      if (item.separator) {
+                        return <div key={index} className="border-t border-slate-100 my-1" />;
+                      }
 
-        {/* Simulation Controls */}
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={onSimulate}
-            disabled={isSimulating}
-            className={`toolbar-btn-primary ${isSimulating ? 'opacity-50 cursor-not-allowed' : ''}`}
-            title="Start Simulation (F5)"
-          >
-            <Play size={16} />
-            <span className="ml-2">{isSimulating ? 'Running...' : 'Simulate'}</span>
-          </button>
-          <button
-            onClick={onReset}
-            className="toolbar-btn"
-            title="Reset Simulation"
-          >
-            <Square size={16} />
-          </button>
-          <button
-            onClick={onReset}
-            className="toolbar-btn"
-            title="Reset Circuit"
-          >
-            <RotateCcw size={16} />
-          </button>
-          <div className="w-px h-6 bg-gray-300 mx-2" />
+                      return (
+                        <button
+                          key={item.name}
+                          onClick={() => handleMenuItemClick(item)}
+                          className="w-full text-left px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 
+                                   hover:text-slate-900 flex items-center justify-between"
+                        >
+                          <span>{item.name}</span>
+                          {item.shortcut && (
+                            <span className="text-xs text-slate-400 font-mono">{item.shortcut}</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* View Controls */}
-        <div className="flex items-center space-x-2">
+        {/* Center: Breadcrumb/Current File */}
+        <div className="flex-1 text-center">
+          <span className="text-sm text-slate-600 font-medium">{currentFileName}</span>
+        </div>
+
+        {/* Right: Primary Action + Secondary Icons */}
+        <div className="flex items-center gap-2">
+          {/* Secondary Actions */}
           <button
-            onClick={onZoomIn}
-            className="toolbar-btn"
-            title="Zoom In (Ctrl++)"
+            className="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-700 transition-colors"
+            title="Undo (Ctrl+Z)"
           >
-            <ZoomIn size={16} />
+            <Undo size={16} />
           </button>
+          <button
+            className="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-700 transition-colors"
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo size={16} />
+          </button>
+          
+          <div className="w-px h-4 bg-slate-300 mx-1" />
+          
           <button
             onClick={onZoomOut}
-            className="toolbar-btn"
+            className="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-700 transition-colors"
             title="Zoom Out (Ctrl+-)"
           >
             <ZoomOut size={16} />
           </button>
           <button
-            onClick={onFitView}
-            className="toolbar-btn"
-            title="Zoom to Fit (Ctrl+0)"
+            onClick={onZoomIn}
+            className="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-700 transition-colors"
+            title="Zoom In (Ctrl++)"
           >
-            <FileText size={16} />
+            <ZoomIn size={16} />
           </button>
-          <div className="w-px h-6 bg-gray-300 mx-2" />
           <button
-            className="toolbar-btn"
-            title="Settings"
+            onClick={onFitView}
+            className="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-700 transition-colors"
+            title="Fit to View (Ctrl+0)"
           >
-            <Settings size={16} />
+            <Grid size={16} />
+          </button>
+
+          <div className="w-px h-4 bg-slate-300 mx-1" />
+
+          <button
+            onClick={onSave}
+            className="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-700 transition-colors"
+            title="Save (Ctrl+S)"
+          >
+            <Save size={16} />
+          </button>
+
+          <div className="w-px h-4 bg-slate-300 mx-1" />
+
+          {/* Primary Action - Simulate */}
+          <button
+            onClick={onSimulate}
+            disabled={isSimulating}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-150 
+                       flex items-center gap-2 shadow-sm ${
+              isSimulating 
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+            }`}
+          >
+            <Play size={14} />
+            {isSimulating ? 'Running...' : 'Simulate'}
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Click outside to close menus */}
       {activeMenu && (
@@ -272,6 +230,6 @@ export default function TopToolbar({
           onClick={() => setActiveMenu(null)}
         />
       )}
-    </div>
+    </>
   );
 }
