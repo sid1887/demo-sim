@@ -266,7 +266,7 @@ const ImageUploadPanel = ({ onImageAnalyzed, isAnalyzing }) => {
                 <h5>Detected Components:</h5>
                 <div className="components-list">
                   {analysisResult.components.slice(0, 8).map((component, index) => (
-                    <div key={index} className="component-item">
+                    <div key={component.name || `component-${component.type}-${index}`} className="component-item">
                       <div className="component-type">{component.type}</div>
                       <div className="component-details">
                         <span className="component-name">{component.name}</span>
@@ -291,7 +291,7 @@ const ImageUploadPanel = ({ onImageAnalyzed, isAnalyzing }) => {
                 <h5>Recommendations:</h5>
                 <ul>
                   {analysisResult.recommendations.slice(0, 3).map((rec, index) => (
-                    <li key={index}>{rec}</li>
+                    <li key={`recommendation-${index}-${rec.substring(0, 10)}`}>{rec}</li>
                   ))}
                 </ul>
               </div>

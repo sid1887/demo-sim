@@ -38,6 +38,13 @@ const nodeTypes = {
   currentSource: CurrentSourceNode,
   diode: DiodeNode,
   ground: GroundNode,
+  // Signal Generators
+  acVoltage: VoltageSourceNode, // Use existing voltage source for now
+  dcVoltage: VoltageSourceNode,
+  functionGen: VoltageSourceNode,
+  currentSourceGen: CurrentSourceNode,
+  pulseGen: VoltageSourceNode,
+  awg: VoltageSourceNode,
 };
 
 const edgeTypes = {

@@ -62,6 +62,8 @@ export default function TopToolbar({
   onSave,
   onOpen,
   onToggleImageUpload,
+  onToggleOscilloscope,
+  showOscilloscope = false,
   currentFileName = 'untitled.circuit'
 }) {
   const [activeMenu, setActiveMenu] = useState(null);
@@ -216,6 +218,19 @@ export default function TopToolbar({
             title="Upload Circuit Image (AI Analysis)"
           >
             <Camera size={16} />
+          </button>
+
+          {/* Oscilloscope Button */}
+          <button
+            onClick={onToggleOscilloscope}
+            className={`p-2 rounded-md transition-colors ${
+              showOscilloscope 
+                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-700'
+            }`}
+            title="Toggle Oscilloscope (Waveform Analysis)"
+          >
+            📊
           </button>
 
           <div className="w-px h-4 bg-slate-300 mx-1" />

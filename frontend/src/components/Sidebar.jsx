@@ -41,6 +41,19 @@ const COMPONENT_CATEGORIES = [
     ]
   },
   {
+    name: 'Signal Generators',
+    icon: Waves,
+    expanded: false,
+    components: [
+      { type: 'acVoltage', name: 'AC Voltage', icon: '~V', description: 'AC voltage source', value: '5V@1kHz' },
+      { type: 'dcVoltage', name: 'DC Voltage', icon: '=V', description: 'DC voltage source', value: '5V' },
+      { type: 'functionGen', name: 'Function Gen', icon: '⫸', description: 'Waveform generator', value: 'Sine 1kHz' },
+      { type: 'currentSourceGen', name: 'Current Gen', icon: '~I', description: 'AC current source', value: '1mA@1kHz' },
+      { type: 'pulseGen', name: 'Pulse Gen', icon: '⎍', description: 'Pulse generator', value: '5V 50% duty' },
+      { type: 'awg', name: 'AWG', icon: '∿', description: 'Arbitrary waveform', value: 'Custom' },
+    ]
+  },
+  {
     name: 'Semiconductors',
     icon: Cpu,
     expanded: false,

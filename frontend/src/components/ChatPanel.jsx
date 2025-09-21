@@ -310,7 +310,7 @@ ${errorInfo.message}
           <div className="flex flex-wrap gap-2">
             {SAMPLE_QUESTIONS.slice(0, 3).map((question, index) => (
               <button
-                key={index}
+                key={`sample-question-${index}-${question.substring(0, 10)}`}
                 onClick={() => useSampleQuestion(question)}
                 className="text-xs bg-white/5 text-white/80 px-2 py-1 rounded-full hover:bg-white/10 transition-colors border border-white/10"
               >

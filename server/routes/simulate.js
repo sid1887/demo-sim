@@ -1,6 +1,43 @@
 const express = require('express');
-const { spawn } = require('child_process');
+const { spawn, execFile } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const os = require('os');
 const router = express.Router();
+
+// Input validation and sanitization
+function sanitizeNetlist(netlist) {
+  if (typeof netlist !== 'string') {
+    throw new Error('Netlist must be a string');
+  }
+  
+  // Remove potentially dangerous characters and commands
+  const sanitized = netlist
+    .replace(/[`${}]/g, '') // Remove shell metacharacters
+    .replace(/\\\\/g, '') // Remove backslashes
+    .replace(/;/g, '') // Remove semicolons
+    .replace(/\|/g, '') // Remove pipes
+    .replace(/&/g, '') // Remove ampersands
+    .trim();
+    
+  // Validate netlist format
+  const lines = sanitized.split('\n');
+  const validLines = lines.filter(line => {
+    const trimmed = line.trim();
+    // Allow comment lines, component lines, and directive lines
+    return trimmed === '' || 
+           trimmed.startsWith('*') || 
+           trimmed.startsWith('.') || 
+           /^[a-zA-Z]\w*\s+\w+\s+\w+/.test(trimmed);
+  });
+  
+  if (validLines.length === 0) {
+    throw new Error('Invalid netlist format');
+  }
+  
+  return validLines.join('\n');
+}
 
 // NGSpice simulation endpoint
 router.post('/', async (req, res) => {
@@ -15,7 +52,10 @@ router.post('/', async (req, res) => {
 
   try {
     console.log('🔬 Starting NGSpice simulation...');
-    console.log('Netlist:', netlist);
+    
+    // Sanitize and validate input
+    const sanitizedNetlist = sanitizeNetlist(netlist);
+    console.log('Sanitized netlist length:', sanitizedNetlist.length);
 
     // Check if ngspice is available first
     const ngspiceAvailable = await checkNGSpiceAvailability();
@@ -25,7 +65,7 @@ router.post('/', async (req, res) => {
       return res.json({
         success: true,
         analysisType,
-        results: generateEnhancedMockResults(netlist, analysisType),
+        results: generateEnhancedMockResults(sanitizedNetlist, analysisType),
         timestamp: new Date().toISOString(),
         note: 'Using enhanced simulation model (PySpice DLL unavailable)',
         instructions: {
@@ -36,7 +76,7 @@ router.post('/', async (req, res) => {
     }
 
     // Run simulation
-    const results = await runNGSpiceSimulation(netlist, analysisType, parameters);
+    const results = await runNGSpiceSimulation(sanitizedNetlist, analysisType, parameters);
     
     console.log('✅ Simulation completed successfully');
     return res.json({
@@ -59,7 +99,9 @@ router.post('/', async (req, res) => {
 // Check if NGSpice is available via PySpice
 async function checkNGSpiceAvailability() {
   return new Promise((resolve) => {
-    // Test PySpice with actual NgSpice DLL loading
+    // Create a safe temporary Python script file
+    const tempFile = path.join(os.tmpdir(), `pyspice_check_${crypto.randomBytes(8).toString('hex')}.py`);
+    
     const pythonScript = `
 try:
     from PySpice.Spice.NgSpice.Shared import NgSpiceShared
@@ -70,54 +112,66 @@ except Exception as e:
     exit(1)
 `;
     
-    const python = spawn('python', ['-c', pythonScript], { stdio: 'pipe' });
-    
-    let stdout = '';
-    let stderr = '';
-    
-    python.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-    
-    python.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-    
-    python.on('close', (code) => {
-      console.log(`PySpice availability check: code=${code}, stdout="${stdout.trim()}", stderr="${stderr.trim()}"`);
-      resolve(code === 0 && stdout.includes('PySpice DLL available'));
-    });
-    
-    python.on('error', (error) => {
-      console.log('PySpice check error:', error.message);
+    try {
+      fs.writeFileSync(tempFile, pythonScript, 'utf8');
+      
+      const python = execFile('python', [tempFile], { 
+        stdio: 'pipe',
+        timeout: 10000 // 10 second timeout
+      }, (error, stdout, stderr) => {
+        // Clean up temp file
+        try {
+          fs.unlinkSync(tempFile);
+        } catch (cleanupError) {
+          console.warn('Could not clean up temp file:', cleanupError.message);
+        }
+        
+        if (error) {
+          console.log('PySpice check error:', error.message);
+          resolve(false);
+          return;
+        }
+        
+        console.log(`PySpice availability check: stdout="${stdout.trim()}", stderr="${stderr.trim()}"`);
+        resolve(stdout.includes('PySpice DLL available'));
+      });
+      
+    } catch (fileError) {
+      console.log('Failed to create temp script:', fileError.message);
       resolve(false);
-    });
-    
-    // Timeout after 10 seconds
-    setTimeout(() => {
-      python.kill();
-      resolve(false);
-    }, 10000);
+    }
   });
 }
 
 // Run NGSpice simulation via PySpice
 function runNGSpiceSimulation(netlist, analysisType, parameters) {
   return new Promise((resolve, reject) => {
-    // Create Python script to run PySpice simulation
-    const pythonScript = `
+    // Create safe temporary files
+    const tempId = crypto.randomBytes(8).toString('hex');
+    const tempScriptFile = path.join(os.tmpdir(), `simulation_${tempId}.py`);
+    const tempNetlistFile = path.join(os.tmpdir(), `netlist_${tempId}.cir`);
+    
+    try {
+      // Write the full netlist to a temporary file
+      const fullNetlist = buildFullNetlist(netlist, analysisType, parameters);
+      fs.writeFileSync(tempNetlistFile, fullNetlist, 'utf8');
+      
+      // Create Python script that reads from file (no user input in code)
+      const pythonScript = `
 import sys
+import os
+import json
 from PySpice.Spice.NgSpice.Shared import NgSpiceShared
-from PySpice.Unit import *
 
 try:
     ngspice_shared = NgSpiceShared.new_instance()
     
-    # Build netlist
-    netlist = """${buildFullNetlist(netlist, analysisType, parameters).replace(/"/g, '\\"')}"""
+    # Read netlist from safe file
+    with open('${tempNetlistFile.replace(/\\/g, '\\\\')}', 'r') as f:
+        netlist_content = f.read()
     
     # Run simulation
-    ngspice_shared.load_circuit(netlist)
+    ngspice_shared.load_circuit(netlist_content)
     ngspice_shared.run()
     
     # Get results
@@ -138,37 +192,43 @@ try:
     results['components'] = {}
     results['branches'] = {}
     
-    print('SUCCESS:' + str(results))
+    print(json.dumps({'success': True, 'data': results}))
     
 except Exception as e:
-    print(f"ERROR: {str(e)}", file=sys.stderr)
+    print(json.dumps({'success': False, 'error': str(e)}), file=sys.stderr)
     sys.exit(1)
 `;
 
-    const python = spawn('python', ['-c', pythonScript]);
-    
-    let stdout = '';
-    let stderr = '';
+      fs.writeFileSync(tempScriptFile, pythonScript, 'utf8');
+      
+      const python = execFile('python', [tempScriptFile], {
+        stdio: 'pipe',
+        timeout: 30000 // 30 second timeout
+      }, (error, stdout, stderr) => {
+        
+        // Clean up temporary files
+        try {
+          fs.unlinkSync(tempScriptFile);
+          fs.unlinkSync(tempNetlistFile);
+        } catch (cleanupError) {
+          console.warn('Could not clean up temp files:', cleanupError.message);
+        }
+        
+        if (error) {
+          reject(new Error(`PySpice simulation failed: ${error.message}`));
+          return;
+        }
 
-    python.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-
-    python.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    python.on('close', (code) => {
-      if (code !== 0) {
-        reject(new Error(`PySpice simulation failed: ${stderr}`));
-        return;
-      }
-
-      try {
-        // Parse Python output
-        const successMatch = stdout.match(/SUCCESS:(.+)/);
-        if (successMatch) {
-          const results = eval('(' + successMatch[1] + ')'); // Parse Python dict
+        try {
+          // Parse JSON output safely
+          const result = JSON.parse(stdout.trim());
+          
+          if (!result.success) {
+            reject(new Error(result.error || 'Simulation failed'));
+            return;
+          }
+          
+          const results = result.data;
           
           // Add analysis metadata
           results.type = analysisType;
@@ -182,23 +242,14 @@ except Exception as e:
           results.edges = generateEdgeData(results);
           
           resolve(results);
-        } else {
-          reject(new Error('Could not parse PySpice results'));
+        } catch (parseError) {
+          reject(new Error(`Failed to parse results: ${parseError.message}`));
         }
-      } catch (parseError) {
-        reject(new Error(`Failed to parse results: ${parseError.message}`));
-      }
-    });
-
-    python.on('error', (error) => {
-      reject(error);
-    });
-
-    // Timeout
-    setTimeout(() => {
-      python.kill('SIGKILL');
-      reject(new Error('PySpice simulation timeout'));
-    }, 30000);
+      });
+      
+    } catch (fileError) {
+      reject(new Error(`Failed to create simulation files: ${fileError.message}`));
+    }
   });
 }
 

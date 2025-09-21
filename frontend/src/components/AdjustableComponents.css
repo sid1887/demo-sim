@@ -1,0 +1,184 @@
+.adjustable-component {
+  position: relative;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 100px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.adjustable-component:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.adjustable-component.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.component-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.component-label {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.component-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 2px;
+}
+
+.component-value {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.value-display {
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.value-display:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.value-editor {
+  width: 100%;
+  padding: 2px 6px;
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  background: white;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.value-editor:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Component-specific symbols */
+.resistor-symbol,
+.capacitor-symbol,
+.inductor-symbol,
+.voltage-source-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* IEEE Standard Colors */
+.resistor-symbol svg rect {
+  fill: #fef3c7;
+  stroke: #d97706;
+}
+
+.capacitor-symbol svg line {
+  stroke: #059669;
+}
+
+.inductor-symbol svg path {
+  stroke: #7c3aed;
+}
+
+.voltage-source-symbol svg circle {
+  fill: #fee2e2;
+  stroke: #dc2626;
+}
+
+/* Animation for editing state */
+.adjustable-component.editing {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .adjustable-component {
+    min-width: 80px;
+    padding: 6px;
+  }
+  
+  .component-name {
+    font-size: 11px;
+  }
+  
+  .component-value {
+    font-size: 10px;
+  }
+  
+  .value-editor {
+    font-size: 10px;
+  }
+}
+
+/* Handle positioning for React Flow */
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background: #3b82f6;
+  border: 2px solid white;
+}
+
+.react-flow__handle-left {
+  left: -6px;
+}
+
+.react-flow__handle-right {
+  right: -6px;
+}
+
+/* Quick preset buttons (for future enhancement) */
+.value-presets {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.preset-button {
+  padding: 4px 8px;
+  font-size: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.preset-button:hover {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}

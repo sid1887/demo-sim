@@ -1,0 +1,176 @@
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+  pointer-events: none;
+}
+
+.notification {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  backdrop-filter: blur(10px);
+  pointer-events: all;
+  position: relative;
+  overflow: hidden;
+}
+
+.notification::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+  z-index: -1;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.notification-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.notification-message {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.notification-action {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.notification-action:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-close:hover {
+  background: rgba(107, 114, 128, 0.1);
+  color: #374151;
+}
+
+/* Different notification types */
+.notification[data-type="success"] {
+  border-left-color: #10b981 !important;
+}
+
+.notification[data-type="error"] {
+  border-left-color: #ef4444 !important;
+}
+
+.notification[data-type="warning"] {
+  border-left-color: #f59e0b !important;
+}
+
+.notification[data-type="info"] {
+  border-left-color: #3b82f6 !important;
+}
+
+.notification[data-type="simulation"] {
+  border-left-color: #8b5cf6 !important;
+}
+
+.notification[data-type="circuit"] {
+  border-left-color: #06b6d4 !important;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .notification-container {
+    left: 20px;
+    right: 20px;
+    max-width: none;
+  }
+  
+  .notification {
+    padding: 12px 16px;
+  }
+  
+  .notification-message {
+    font-size: 13px;
+  }
+}
+
+/* Animation improvements */
+.notification:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15), 0 8px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+/* Progress bar for timed notifications */
+.notification::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: currentColor;
+  opacity: 0.3;
+  animation: notification-progress var(--duration, 4000ms) linear;
+}
+
+@keyframes notification-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}

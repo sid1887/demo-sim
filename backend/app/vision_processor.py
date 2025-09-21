@@ -10,11 +10,25 @@ import numpy as np
 from typing import Dict, Any, List, Tuple, Optional
 
 # Try to import YOLOv8, fall back to Gemini-only if unavailable
-try:
-    from ultralytics import YOLO
-    YOLO_AVAILABLE = True
-except ImportError:
-    YOLO_AVAILABLE = False
+# Defer YOLO import to avoid circular import issues with matplotlib
+YOLO_AVAILABLE = False
+YOLO = None
+
+def _lazy_load_yolo():
+    global YOLO, YOLO_AVAILABLE
+    if YOLO is None and not YOLO_AVAILABLE:
+        try:
+            # Force matplotlib backend before importing ultralytics
+            import matplotlib
+            matplotlib.use('Agg')  # Use non-interactive backend
+            
+            from ultralytics import YOLO as _YOLO
+            YOLO = _YOLO
+            YOLO_AVAILABLE = True
+        except ImportError as e:
+            print(f"Failed to load YOLO: {e}")
+            YOLO_AVAILABLE = False
+    return YOLO_AVAILABLE
 
 try:
     from google import genai
@@ -46,18 +60,29 @@ class VisionProcessor:
         # Try to load YOLO model
         if YOLO_AVAILABLE:
             try:
-                # Look for the best.pt file from circuitry
+                # Get model path from environment variable or use default paths
+                model_path = os.environ.get(
+                    "YOLO_MODEL_PATH", 
+                    os.path.join(os.path.dirname(__file__), "../../circuitry/best.pt")
+                )
+                
+                # Fallback paths if environment variable not set
                 yolo_paths = [
-                    "d:/dev_packages/demo-sim/circuitry/best.pt",
-                    "../circuitry/best.pt",
-                    "./best.pt"
+                    model_path,
+                    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../circuitry/best.pt")),
+                    "./best.pt",
+                    "../models/best.pt"
                 ]
                 
                 for path in yolo_paths:
                     if os.path.exists(path):
-                        self.yolo_model = YOLO(path)
-                        print(f"✅ YOLO model loaded from: {path}")
-                        break
+                        if _lazy_load_yolo():
+                            self.yolo_model = YOLO(path)
+                            print(f"✅ YOLO model loaded from: {path}")
+                            break
+                        else:
+                            print("⚠️  YOLO import failed, using Gemini Vision only")
+                            break
                 
                 if not self.yolo_model:
                     print("⚠️  YOLO weights not found, using Gemini Vision only")

@@ -148,7 +148,7 @@ export default function EnhancedAnalysisPanel({ analysisData, onClose, isVisible
                       <div className="flex flex-wrap gap-1">
                         {circuitAnalysis.key_components.map((component, index) => (
                           <span
-                            key={index}
+                            key={`key-component-${component}-${index}`}
                             className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-mono"
                           >
                             {component}
@@ -189,7 +189,7 @@ export default function EnhancedAnalysisPanel({ analysisData, onClose, isVisible
               >
                 <div className="p-4 space-y-3 max-h-64 overflow-y-auto">
                   {componentAnalysis.map((component, index) => (
-                    <div key={index} className="border border-slate-200 rounded-lg p-3">
+                    <div key={component.id || `component-${index}`} className="border border-slate-200 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-sm">
                           {component.id} ({component.type})
@@ -208,7 +208,7 @@ export default function EnhancedAnalysisPanel({ analysisData, onClose, isVisible
                       {component.issues && component.issues.length > 0 && (
                         <div className="mb-2">
                           {component.issues.map((issue, issueIndex) => (
-                            <div key={issueIndex} className="flex items-center gap-1 text-xs text-red-600">
+                            <div key={`issue-${component.id}-${issueIndex}-${issue.substring(0, 10)}`} className="flex items-center gap-1 text-xs text-red-600">
                               <AlertCircle className="w-3 h-3" />
                               <span>{issue}</span>
                             </div>
@@ -219,7 +219,7 @@ export default function EnhancedAnalysisPanel({ analysisData, onClose, isVisible
                       {component.recommendations && component.recommendations.length > 0 && (
                         <div>
                           {component.recommendations.slice(0, 2).map((rec, recIndex) => (
-                            <div key={recIndex} className="flex items-center gap-1 text-xs text-blue-600">
+                            <div key={`rec-${component.id}-${recIndex}-${rec.substring(0, 10)}`} className="flex items-center gap-1 text-xs text-blue-600">
                               <Info className="w-3 h-3" />
                               <span>{rec}</span>
                             </div>
@@ -261,7 +261,7 @@ export default function EnhancedAnalysisPanel({ analysisData, onClose, isVisible
                 >
                   <div className="p-4 space-y-2">
                     {Object.entries(performanceMetrics).map(([key, value], index) => (
-                      <div key={index} className="flex justify-between items-center">
+                      <div key={`metric-${key}`} className="flex justify-between items-center">
                         <span className="text-sm text-slate-600 capitalize">
                           {key.replace('_', ' ')}
                         </span>
@@ -307,7 +307,7 @@ export default function EnhancedAnalysisPanel({ analysisData, onClose, isVisible
                 >
                   <div className="p-4 space-y-2 max-h-48 overflow-y-auto">
                     {recommendations.map((recommendation, index) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
+                      <div key={`recommendation-${index}-${recommendation.substring(0, 15)}`} className="flex items-start gap-2 text-sm">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-slate-700">{recommendation}</span>
                       </div>

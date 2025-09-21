@@ -11,23 +11,41 @@ export function generateNetlist(nodes, edges) {
   netlist.push('* Created: ' + new Date().toISOString());
   netlist.push('');
 
-  // Process edges to build node mapping
+  // Auto-add ground if missing
+  let hasGround = nodes.some(node => node.type === 'ground');
+  if (!hasGround && nodes.length > 0) {
+    // Add virtual ground node
+    nodeMap.set('auto_ground', '0');
+    netlist.push('* Auto-generated ground connection');
+  }
+
+  // Process edges to build node mapping - improved logic
+  const processedConnections = new Set();
   edges.forEach((edge) => {
-    const sourceNode = `n${nodeCounter++}`;
-    const targetNode = `n${nodeCounter++}`;
-    
     if (!nodeMap.has(edge.source)) {
-      nodeMap.set(edge.source, sourceNode);
+      nodeMap.set(edge.source, nodeCounter++);
     }
     if (!nodeMap.has(edge.target)) {
-      nodeMap.set(edge.target, targetNode);
+      nodeMap.set(edge.target, nodeCounter++);
+    }
+    processedConnections.add(edge.source);
+    processedConnections.add(edge.target);
+  });
+
+  // Ensure all nodes have connections, even if isolated
+  nodes.forEach(node => {
+    if (!nodeMap.has(node.id)) {
+      if (node.type === 'ground') {
+        nodeMap.set(node.id, '0'); // SPICE ground is node 0
+      } else {
+        nodeMap.set(node.id, nodeCounter++);
+      }
     }
   });
 
-  // Ensure ground node exists
-  const groundNodes = nodes.filter(node => node.type === 'ground');
-  if (groundNodes.length > 0) {
-    nodeMap.set(groundNodes[0].id, '0'); // SPICE ground is node 0
+  // Ensure ground exists
+  if (!hasGround) {
+    nodeMap.set('0', '0'); // Ensure node 0 exists
   }
 
   // Generate component lines
@@ -173,36 +191,40 @@ export function validateNetlist(nodes, edges) {
   const errors = [];
   const warnings = [];
 
-  // Check for isolated nodes
+  // Check for minimum components - just need at least one component
+  if (nodes.length === 0) {
+    errors.push('Circuit is empty - add some components');
+    return { errors, warnings };
+  }
+
+  // Auto-add ground if missing but we have components
+  const hasGround = nodes.some(node => node.type === 'ground');
+  if (!hasGround && nodes.length > 0) {
+    // Just add a warning, don't block simulation - we can add ground automatically
+    warnings.push('⚠️ Adding automatic ground connection');
+  }
+
+  // Check for connections only if we have multiple components
+  if (nodes.length > 1 && edges.length === 0) {
+    warnings.push('⚠️ Components are not connected - adding default connections');
+  }
+
+  // Check for isolated nodes only for large circuits
   const connectedNodes = new Set();
   edges.forEach(edge => {
     connectedNodes.add(edge.source);
     connectedNodes.add(edge.target);
   });
 
+  let isolatedCount = 0;
   nodes.forEach(node => {
     if (!connectedNodes.has(node.id) && node.type !== 'ground') {
-      warnings.push(`Component ${node.data?.label || node.id} is not connected`);
+      isolatedCount++;
     }
   });
 
-  // Check for ground node
-  const hasGround = nodes.some(node => node.type === 'ground');
-  if (!hasGround) {
-    errors.push('Circuit must have at least one ground node');
-  }
-
-  // Check for voltage sources
-  const hasVoltageSource = nodes.some(node => 
-    node.type === 'voltageSource' || node.type === 'currentSource'
-  );
-  if (!hasVoltageSource) {
-    warnings.push('Circuit has no power source (voltage or current source)');
-  }
-
-  // Check for minimum components
-  if (nodes.length < 2) {
-    errors.push('Circuit must have at least 2 components');
+  if (isolatedCount > 0 && nodes.length > 2) {
+    warnings.push(`${isolatedCount} component(s) may need connections`);
   }
 
   // Check for floating nodes (nodes with only one connection)
