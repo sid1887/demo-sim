@@ -39,17 +39,21 @@ apiClient.interceptors.response.use(
 export const simulationAPI = {
   async runSimulation(netlist, analysisType = 'op', parameters = {}) {
     try {
+      console.log(`🔬 Running ${analysisType} simulation on Node.js server...`)
       const response = await apiClient.post('/simulate', {
         netlist,
         analysisType,
         parameters
       });
       
+      console.log('✅ Node.js simulation response:', response.data)
       return response.data;
     } catch (error) {
+      console.error('❌ Node.js simulation failed:', error.response?.data || error.message)
       throw new Error(
         error.response?.data?.message || 
-        `Simulation failed: ${error.message}`
+        error.response?.data?.error ||
+        `Node.js simulation failed: ${error.message}`
       );
     }
   },

@@ -1,1 +1,77 @@
-/* Empty - optional app styles */
+/* App-specific styles */
+
+/* Image Upload Panel Container */
+.image-upload-panel-container {
+  z-index: 1000;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.image-upload-panel-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.image-upload-panel-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.image-upload-panel-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.image-upload-panel-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Circuit Board Enhancement Preview */
+.circuit-board-preview {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+  position: relative;
+}
+
+.circuit-board-preview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.5;
+}
+
+/* Animation for analyzing state */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(37, 99, 235, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.8), 0 0 40px rgba(37, 99, 235, 0.4);
+  }
+}
+
+.analyzing {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Responsive design for panels */
+@media (max-width: 1200px) {
+  .image-upload-panel-container {
+    left: 8px !important;
+    top: 60px !important;
+    max-width: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .image-upload-panel-container {
+    left: 4px !important;
+    top: 56px !important;
+    max-width: calc(100vw - 20px);
+    right: 4px;
+  }
+}

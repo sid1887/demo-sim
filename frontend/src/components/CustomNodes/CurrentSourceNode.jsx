@@ -2,110 +2,87 @@ import React from 'react';
 import BasicComponentNode from './BasicComponentNode';
 
 export default function CurrentSourceNode(props) {
-  const { selected, data } = props;
-  
   const svgContent = (
     <g>
-      {/* Current source circle with professional styling */}
+      {/* IEEE Standard Current Source - Circle */}
       <circle 
         cx="40" 
         cy="15" 
-        r="18" 
-        stroke={selected ? "#2563EB" : "#475569"} 
-        strokeWidth="2.5" 
-        fill={selected ? "#EBF4FF" : "#F8FAFC"}
-        className="transition-colors duration-200"
-      />
-      
-      {/* Inner circle for depth */}
-      <circle 
-        cx="40" 
-        cy="15" 
-        r="14" 
-        stroke={selected ? "#3B82F6" : "#64748B"} 
-        strokeWidth="1.5" 
+        r="16" 
+        stroke="currentColor" 
+        strokeWidth="2" 
         fill="none"
-        opacity="0.6"
       />
       
-      {/* Arrow indicating current direction with enhanced styling */}
+      {/* Connection leads */}
+      <line x1="0" y1="15" x2="24" y2="15" stroke="currentColor" strokeWidth="2"/>
+      <line x1="56" y1="15" x2="80" y2="15" stroke="currentColor" strokeWidth="2"/>
+      
+      {/* Arrow indicating current direction */}
       <path
         d="M30,15 L50,15 M46,11 L50,15 L46,19"
-        stroke={selected ? "#2563EB" : "#1E293B"}
-        strokeWidth="2.5"
+        stroke="currentColor"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
       />
       
-      {/* Current symbol "I" */}
-      <text
-        x="40"
-        y="8"
-        textAnchor="middle"
-        className="text-xs font-semibold"
-        fill={selected ? "#2563EB" : "#374151"}
-      >
-        I
-      </text>
+      {/* DC Current Source - No additional symbols needed */}
+      {(!props.data?.sourceType || props.data.sourceType === 'DC') && (
+        <text
+          x="40"
+          y="8"
+          textAnchor="middle"
+          fontSize="8"
+          fill="currentColor"
+          fontWeight="bold"
+        >
+          I
+        </text>
+      )}
       
-      {/* Connection leads with improved styling */}
-      <line 
-        x1="0" 
-        y1="15" 
-        x2="22" 
-        y2="15" 
-        stroke="#16A34A" 
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <line 
-        x1="58" 
-        y1="15" 
-        x2="80" 
-        y2="15" 
-        stroke="#16A34A" 
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+      {/* AC Current Source - Sine wave behind arrow */}
+      {props.data?.sourceType === 'AC' && (
+        <>
+          <path
+            d="M32,22 Q36,19 40,22 T48,22"
+            stroke="currentColor"
+            fill="none"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            opacity="0.7"
+          />
+          <text
+            x="40"
+            y="8"
+            textAnchor="middle"
+            fontSize="8"
+            fill="currentColor"
+            fontWeight="bold"
+          >
+            I~
+          </text>
+        </>
+      )}
       
-      {/* Connection points (8px circles as specified) */}
-      <circle 
-        cx="22" 
-        cy="15" 
-        r="4" 
-        fill="#16A34A"
-        stroke="#F6F8FA"
-        strokeWidth="1"
-        className="connector-point"
-      />
-      <circle 
-        cx="58" 
-        cy="15" 
-        r="4" 
-        fill="#16A34A"
-        stroke="#F6F8FA"
-        strokeWidth="1"
-        className="connector-point"
-      />
+      {/* Controlled current source indicator */}
+      {props.data?.controlled && (
+        <polygon
+          points="32,23 40,26 48,23"
+          stroke="currentColor"
+          fill="none"
+          strokeWidth="1"
+        />
+      )}
     </g>
   );
 
   return (
     <BasicComponentNode
       {...props}
-      className={`current-source-node ${selected ? 'selected' : ''}`}
+      className="current-source-node ieee-standard"
       svgContent={svgContent}
-      style={{
-        borderRadius: '16px',
-        boxShadow: selected 
-          ? '0 8px 25px -5px rgba(37, 99, 235, 0.25), 0 8px 10px -6px rgba(37, 99, 235, 0.1)' 
-          : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
-        border: selected ? '2px solid #2563EB' : '1px solid #E2E8F0',
-        backgroundColor: '#FFFFFF',
-        padding: '12px',
-        transition: 'all 0.2s ease-in-out'
-      }}
     />
   );
 }

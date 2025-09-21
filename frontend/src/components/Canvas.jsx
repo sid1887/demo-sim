@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import ReactFlow, { 
   addEdge, 
   applyNodeChanges, 
@@ -10,6 +10,7 @@ import ReactFlow, {
   ReactFlowProvider,
   Panel
 } from 'reactflow';
+import 'reactflow/dist/style.css';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -188,6 +189,19 @@ function Canvas({
     }
   }, [nodes, edges, onSimulate]);
 
+  // Add keyboard shortcut for simulation (Ctrl+Enter)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        handleSimulate();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleSimulate]);
+
   const onNodeClick = useCallback((event, node) => {
     onNodeSelect?.(node);
   }, [onNodeSelect]);
@@ -220,20 +234,58 @@ function Canvas({
 
   return (
     <div className="canvas-container">
-      {/* React Flow Canvas */}
-      <div className="flex-1 relative bg-gray-50">
+      {/* React Flow Canvas with Professional PCB Styling */}
+      <div className={`flex-1 relative pcb-canvas ${isSimulating ? 'simulation-active' : ''}`}>
         <ReactFlow {...canvasProps}>
           <Background 
-            color="#d1d5db"
+            color="rgba(255, 255, 255, 0.1)"
             gap={20}
             size={1}
             variant="dots"
+            style={{ opacity: 0.3 }}
           />
           <Controls 
             className="react-flow__controls"
             showInteractive={false}
+            style={{
+              background: 'rgba(15, 81, 50, 0.9)',
+              border: '1px solid rgba(34, 197, 94, 0.4)',
+              borderRadius: '6px',
+              backdropFilter: 'blur(8px)'
+            }}
           />
         </ReactFlow>
+
+        {/* PCB Information Panel */}
+        <div className="pcb-info">
+          <div className="title">CircuitSim PCB v2.0</div>
+          <div className="specs">
+            2-Layer • FR-4 • 1.6mm<br/>
+            Components: {nodes.length}<br/>
+            Connections: {edges.length}<br/>
+            {simulationResults && `Simulated: ${Object.keys(simulationResults.nodes || {}).length} nodes`}
+          </div>
+        </div>
+
+        {/* PCB Layers Legend */}
+        <div className="pcb-layers">
+          <div className="layer">
+            <div className="layer-color copper"></div>
+            <span>Copper</span>
+          </div>
+          <div className="layer">
+            <div className="layer-color soldermask"></div>
+            <span>Soldermask</span>
+          </div>
+          <div className="layer">
+            <div className="layer-color silkscreen"></div>
+            <span>Silkscreen</span>
+          </div>
+          <div className="layer">
+            <div className="layer-color drill"></div>
+            <span>Vias</span>
+          </div>
+        </div>
       </div>
     </div>
   );

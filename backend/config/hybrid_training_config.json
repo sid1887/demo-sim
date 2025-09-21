@@ -1,0 +1,182 @@
+{
+  "name": "CircuitAI Hybrid Training Pipeline",
+  "version": "1.0",
+  "components": {
+    "yolo": {
+      "enabled": false,
+      "model": "yolov8n",
+      "task": "component_detection",
+      "confidence_threshold": 0.25
+    },
+    "opencv": {
+      "enabled": true,
+      "methods": [
+        "contour_detection",
+        "template_matching",
+        "hough_lines"
+      ],
+      "task": "wire_detection"
+    },
+    "custom_cnn": {
+      "enabled": false,
+      "architecture": "mobilenet_v2",
+      "task": "component_classification"
+    }
+  },
+  "dataset": {
+    "classes": {
+      "0": {
+        "name": "resistor",
+        "category": "passive",
+        "symbol": "R"
+      },
+      "1": {
+        "name": "capacitor_polarized",
+        "category": "passive",
+        "symbol": "C+"
+      },
+      "2": {
+        "name": "capacitor_unpolarized",
+        "category": "passive",
+        "symbol": "C"
+      },
+      "3": {
+        "name": "inductor",
+        "category": "passive",
+        "symbol": "L"
+      },
+      "4": {
+        "name": "diode",
+        "category": "semiconductor",
+        "symbol": "D"
+      },
+      "5": {
+        "name": "led",
+        "category": "semiconductor",
+        "symbol": "LED"
+      },
+      "6": {
+        "name": "transistor_npn",
+        "category": "semiconductor",
+        "symbol": "Q"
+      },
+      "7": {
+        "name": "transistor_pnp",
+        "category": "semiconductor",
+        "symbol": "Q"
+      },
+      "8": {
+        "name": "ic_dip",
+        "category": "active",
+        "symbol": "IC"
+      },
+      "9": {
+        "name": "op_amp",
+        "category": "active",
+        "symbol": "OpAmp"
+      },
+      "10": {
+        "name": "microcontroller",
+        "category": "active",
+        "symbol": "MCU"
+      },
+      "11": {
+        "name": "and_gate",
+        "category": "logic",
+        "symbol": "AND"
+      },
+      "12": {
+        "name": "or_gate",
+        "category": "logic",
+        "symbol": "OR"
+      },
+      "13": {
+        "name": "not_gate",
+        "category": "logic",
+        "symbol": "NOT"
+      },
+      "14": {
+        "name": "nand_gate",
+        "category": "logic",
+        "symbol": "NAND"
+      },
+      "15": {
+        "name": "nor_gate",
+        "category": "logic",
+        "symbol": "NOR"
+      },
+      "16": {
+        "name": "xor_gate",
+        "category": "logic",
+        "symbol": "XOR"
+      },
+      "17": {
+        "name": "voltage_source",
+        "category": "power",
+        "symbol": "V"
+      },
+      "18": {
+        "name": "current_source",
+        "category": "power",
+        "symbol": "I"
+      },
+      "19": {
+        "name": "ground",
+        "category": "power",
+        "symbol": "GND"
+      },
+      "20": {
+        "name": "vcc",
+        "category": "power",
+        "symbol": "VCC"
+      },
+      "21": {
+        "name": "wire",
+        "category": "connection",
+        "symbol": "\u2014"
+      },
+      "22": {
+        "name": "junction",
+        "category": "connection",
+        "symbol": "\u2022"
+      },
+      "23": {
+        "name": "terminal",
+        "category": "connection",
+        "symbol": "T"
+      },
+      "24": {
+        "name": "multimeter",
+        "category": "instrument",
+        "symbol": "MM"
+      },
+      "25": {
+        "name": "oscilloscope",
+        "category": "instrument",
+        "symbol": "OSC"
+      },
+      "26": {
+        "name": "function_generator",
+        "category": "instrument",
+        "symbol": "FG"
+      }
+    },
+    "synthetic_generation": true,
+    "augmentation": true
+  },
+  "training": {
+    "batch_size": 16,
+    "learning_rate": 0.001,
+    "epochs": 50,
+    "validation_split": 0.2
+  },
+  "evaluation": {
+    "metrics": [
+      "mAP",
+      "precision",
+      "recall",
+      "f1_score"
+    ],
+    "test_images": 100
+  }
+}

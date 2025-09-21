@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 import os
+import sys
 import time
 from dotenv import load_dotenv
 from .image_parser import parse_image_via_gemini
@@ -13,6 +14,15 @@ from .chat_proxy import ask_gemini_text
 from .enhanced_analyzer import analyze_circuit_enhanced
 import tempfile
 import shutil
+
+# Add parent directory to path for integrated detector
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from integrated_circuit_detector import IntegratedCircuitDetector
+    INTEGRATED_DETECTOR_AVAILABLE = True
+except ImportError:
+    INTEGRATED_DETECTOR_AVAILABLE = False
 
 # Load environment variables
 load_dotenv()
@@ -255,7 +265,151 @@ async def get_capabilities():
     except:
         pass
     
+    # Add integrated circuit detector capabilities
+    if INTEGRATED_DETECTOR_AVAILABLE:
+        capabilities["vision_processing"]["integrated_yolo_ai"] = True
+        capabilities["analysis_features"]["ai_training_pipeline"] = True
+        capabilities["ai_features"]["yolo_circuitry_integration"] = True
+    
     return capabilities
+
+
+@app.get("/api/system/status")
+async def get_system_status():
+    """Enhanced system status with integrated detection capabilities"""
+    
+    features = {}
+    
+    # Check Gemini Vision capability
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        features["gemini_vision"] = api_key is not None
+    except:
+        features["gemini_vision"] = False
+    
+    # Check YOLO capability 
+    try:
+        import ultralytics
+        features["yolo_detection"] = True
+    except:
+        features["yolo_detection"] = False
+    
+    # Check OpenCV processing
+    try:
+        import cv2
+        features["opencv_processing"] = True
+    except:
+        features["opencv_processing"] = False
+    
+    # Check Integrated CircuitYOLO system
+    features["integrated_circuit_detector"] = INTEGRATED_DETECTOR_AVAILABLE
+    
+    if INTEGRATED_DETECTOR_AVAILABLE:
+        try:
+            detector = IntegratedCircuitDetector()
+            system_status = detector.get_system_status()
+            features.update({
+                "yolo_integration": system_status.get("yolo_available", False),
+                "ai_training_pipeline": system_status.get("training_pipeline_ready", False),
+                "circuit_component_classes": system_status.get("total_circuit_classes", 0),
+                "synthetic_data_generation": system_status.get("synthetic_data_generation", False)
+            })
+        except Exception as e:
+            features["integrated_detector_error"] = str(e)
+    
+    # Check simulation capability
+    try:
+        from .simulator import simulate_netlist
+        features["spice_simulation"] = True
+    except:
+        features["spice_simulation"] = False
+    
+    return {
+        "status": "ok",
+        "timestamp": time.time(),
+        "version": "2.1.0",
+        "features": features,
+        "capabilities": {
+            "image_analysis": features.get("gemini_vision", False) or features.get("yolo_detection", False) or features.get("integrated_circuit_detector", False),
+            "enhanced_vision": features.get("integrated_circuit_detector", False) or (features.get("yolo_detection", False) and features.get("opencv_processing", False)),
+            "circuit_simulation": features.get("spice_simulation", False),
+            "ai_chat": features.get("gemini_vision", False),
+            "yolo_circuitry_integration": features.get("integrated_circuit_detector", False)
+        }
+    }
+
+
+@app.get("/api/circuit/components")
+async def get_supported_components():
+    """Get list of supported circuit components"""
+    
+    if INTEGRATED_DETECTOR_AVAILABLE:
+        try:
+            detector = IntegratedCircuitDetector()
+            components_info = detector.get_supported_components()
+            return {
+                "success": True,
+                "total_classes": components_info["total_classes"],
+                "categories": components_info["categories"],
+                "circuit_classes": components_info["circuit_classes"],
+                "source": "integrated_detector"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "fallback": True,
+                "message": "Using fallback component list"
+            }
+    
+    # Fallback component list
+    return {
+        "success": True,
+        "total_classes": 15,
+        "categories": ["passive", "semiconductor", "active", "logic", "power", "connection"],
+        "circuit_classes": {
+            "resistor": {"category": "passive", "symbol": "R"},
+            "capacitor": {"category": "passive", "symbol": "C"},
+            "inductor": {"category": "passive", "symbol": "L"},
+            "diode": {"category": "semiconductor", "symbol": "D"},
+            "transistor": {"category": "semiconductor", "symbol": "Q"},
+            "voltage_source": {"category": "power", "symbol": "V"},
+            "ground": {"category": "power", "symbol": "GND"}
+        },
+        "source": "fallback"
+    }
+
+
+@app.post("/api/circuit/train")
+async def setup_training_environment():
+    """Set up AI training environment for circuit detection"""
+    
+    if not INTEGRATED_DETECTOR_AVAILABLE:
+        raise HTTPException(
+            status_code=503, 
+            detail="Integrated circuit detector not available"
+        )
+    
+    try:
+        detector = IntegratedCircuitDetector()
+        result = detector.setup_training_environment()
+        
+        return {
+            "success": result["success"],
+            "message": result["message"],
+            "training_environment": {
+                "dataset_path": result.get("dataset_path"),
+                "models_path": result.get("models_path"),
+                "synthetic_images": result.get("synthetic_images", 0),
+                "circuit_classes": result.get("circuit_classes", 0)
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Training environment setup failed: {str(e)}"
+        )
 
 
 if __name__ == "__main__":

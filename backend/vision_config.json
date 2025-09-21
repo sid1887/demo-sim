@@ -1,0 +1,19 @@
+{
+  "vision_system": {
+    "primary": "gemini",
+    "fallback": "opencv",
+    "yolo_available": false,
+    "pretrained_yolo": true
+  },
+  "detection_strategy": {
+    "components": "gemini_vision",
+    "wires": "opencv_hough",
+    "confidence_threshold": 0.7
+  },
+  "working_features": [
+    "opencv_line_detection",
+    "gemini_analysis",
+    "hybrid_processing",
+    "fallback_systems"
+  ]
+}

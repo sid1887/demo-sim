@@ -2,12 +2,16 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 import { motion } from 'framer-motion'
 
+// Import ReactFlow CSS
+import 'reactflow/dist/style.css'
+
 // Import new components
 import TopToolbar from './components/TopToolbar'
 import Sidebar from './components/Sidebar'
 import Canvas from './components/Canvas'
 import ChatPanel from './components/ChatPanel'
 import ResultsViewer from './components/ResultsViewer'
+import ImageUploadPanel from './components/ImageUploadPanel'
 
 // Import utilities and APIs
 import { generateNetlist, validateNetlist, EXAMPLE_CIRCUITS } from './utils/netlistGenerator'
@@ -15,6 +19,8 @@ import { simulationAPI, geminiAPI, apiUtils } from './api/geminiClient'
 
 // Import styles
 import './styles/professional.css'
+import './styles/ieee-components.css'
+import './styles/pcb-board.css'
 import './App.css'
 
 export default function App() {
@@ -25,6 +31,8 @@ export default function App() {
   const [selectedNode, setSelectedNode] = useState(null)
   const [isSimulating, setIsSimulating] = useState(false)
   const [chatOpen, setChatOpen] = useState(false) // Start closed for cleaner UI
+  const [imageUploadOpen, setImageUploadOpen] = useState(false)
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false)
   const [apiStatus, setApiStatus] = useState('checking')
   const [componentStats, setComponentStats] = useState({ count: 0, connections: 0, nodes: 0 })
 
@@ -70,6 +78,11 @@ export default function App() {
       const nodesToUse = circuitNodes || nodes
       const edgesToUse = circuitEdges || edges
       
+      console.log('🔬 Starting simulation with:', { 
+        nodeCount: nodesToUse.length, 
+        edgeCount: edgesToUse.length 
+      })
+      
       // Validate circuit
       const validation = validateNetlist(nodesToUse, edgesToUse)
       if (validation.errors.length > 0) {
@@ -83,13 +96,37 @@ export default function App() {
 
       // Generate netlist
       const netlist = generateNetlist(nodesToUse, edgesToUse)
-      console.log('Generated netlist:', netlist)
+      console.log('📋 Generated netlist:\n', netlist)
 
-      // Run simulation
-      const results = await simulationAPI.runSimulation(netlist, 'op')
-      setSimulationResults(results)
-
-      toast.success(`Simulation completed! Found ${Object.keys(results.results.nodes).length} node voltages`)
+      // Run simulation using both servers with fallback
+      let results
+      try {
+        // Try Node.js server first (enhanced NgSpice simulation)
+        console.log('🔬 Trying Node.js simulation server...')
+        results = await simulationAPI.runSimulation(netlist, 'op')
+        
+        // Handle Node.js server response format
+        if (results.results) {
+          setSimulationResults(results.results)
+          const nodeCount = Object.keys(results.results.nodes || {}).length
+          toast.success(`✅ Simulation completed! Found ${nodeCount} node voltages`)
+        } else {
+          // Direct results format
+          setSimulationResults(results)
+          const nodeCount = Object.keys(results.nodes || {}).length
+          toast.success(`✅ Simulation completed! Found ${nodeCount} node voltages`)
+        }
+      } catch (nodeError) {
+        console.warn('Node.js server failed, trying Python backend...', nodeError.message)
+        
+        // Fallback to Python backend
+        const { simulate } = await import('./api')
+        results = await simulate(netlist, { type: 'dc' })
+        setSimulationResults(results.results || results)
+        
+        const nodeCount = Object.keys((results.results || results).nodes || {}).length
+        toast.success(`✅ Simulation completed (Python backend)! Found ${nodeCount} node voltages`)
+      }
       
     } catch (error) {
       console.error('Simulation error:', error)
@@ -139,6 +176,51 @@ export default function App() {
     toast.success('Canvas cleared')
   }, [])
 
+  // Handle image analysis results
+  const handleImageAnalyzed = useCallback((analysisResult) => {
+    setIsAnalyzingImage(false)
+    
+    if (analysisResult.error) {
+      toast.error(`Image analysis failed: ${analysisResult.error}`)
+      return
+    }
+
+    const components = analysisResult.components || []
+    toast.success(`Circuit analyzed! Found ${components.length} components`)
+
+    // Convert analyzed components to nodes
+    const newNodes = components.map((comp, index) => {
+      const position = comp.position || [100 + index * 80, 100 + Math.floor(index / 4) * 80]
+      
+      return {
+        id: comp.name || `comp_${index}`,
+        type: 'basic-component',
+        position: { x: position[0], y: position[1] },
+        data: {
+          label: comp.name || `${comp.type}_${index}`,
+          componentType: comp.type,
+          value: comp.value || '1',
+          confidence: comp.confidence || 0.8,
+          detectionMethod: comp.detection_method || 'ai'
+        }
+      }
+    })
+
+    // Add nodes to canvas
+    setNodes(prev => [...prev, ...newNodes])
+    
+    // Show analysis summary
+    const analysis = analysisResult.analysis || {}
+    toast(
+      `Analysis complete!\n${analysis.detection_quality || 'medium'} quality detection\nProcessing: ${analysisResult.processing_method || 'integrated_yolo_ai'}`,
+      { 
+        icon: '🔍', 
+        duration: 5000,
+        style: { maxWidth: '300px' }
+      }
+    )
+  }, [])
+
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       <Toaster 
@@ -173,6 +255,7 @@ export default function App() {
         isSimulating={isSimulating}
         onSave={() => toast('Save functionality coming soon')}
         onOpen={() => toast('Open functionality coming soon')}
+        onToggleImageUpload={() => setImageUploadOpen(prev => !prev)}
       />
 
       {/* Main Content */}
@@ -245,6 +328,29 @@ export default function App() {
               onClose={() => setChatOpen(false)}
               apiAvailable={apiStatus === 'available'}
             />
+          </motion.div>
+        )}
+
+        {/* Image Upload Panel */}
+        {imageUploadOpen && (
+          <motion.div
+            initial={{ x: -300, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -300, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute left-4 top-20 z-50 image-upload-panel-container"
+          >
+            <ImageUploadPanel
+              onImageAnalyzed={handleImageAnalyzed}
+              isAnalyzing={isAnalyzingImage}
+            />
+            <button 
+              onClick={() => setImageUploadOpen(false)}
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 bg-white rounded-full p-1 shadow-md"
+              title="Close image upload"
+            >
+              ✕
+            </button>
           </motion.div>
         )}
       </div>

@@ -12,7 +12,9 @@ import {
   ChevronDown,
   Undo,
   Redo,
-  Grid
+  Grid,
+  Camera,
+  Upload
 } from 'lucide-react';
 
 const MENU_ITEMS = [
@@ -59,6 +61,7 @@ export default function TopToolbar({
   onFitView,
   onSave,
   onOpen,
+  onToggleImageUpload,
   currentFileName = 'untitled.circuit'
 }) {
   const [activeMenu, setActiveMenu] = useState(null);
@@ -202,6 +205,17 @@ export default function TopToolbar({
             title="Save (Ctrl+S)"
           >
             <Save size={16} />
+          </button>
+
+          <div className="w-px h-4 bg-slate-300 mx-1" />
+
+          {/* Image Upload Button */}
+          <button
+            onClick={onToggleImageUpload}
+            className="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-700 transition-colors"
+            title="Upload Circuit Image (AI Analysis)"
+          >
+            <Camera size={16} />
           </button>
 
           <div className="w-px h-4 bg-slate-300 mx-1" />

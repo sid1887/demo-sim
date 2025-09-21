@@ -129,7 +129,15 @@ class VisionProcessor:
             wires = []
             if lines is not None:
                 for i, line in enumerate(lines):
-                    x1, y1, x2, y2 = line[0]
+                    try:
+                        # Handle different line formats (OpenCV version differences)
+                        if len(line) == 4:
+                            x1, y1, x2, y2 = line
+                        else:
+                            x1, y1, x2, y2 = line[0]
+                    except (ValueError, IndexError) as e:
+                        print(f"Skipping malformed line {i}: {e}")
+                        continue
                     
                     # Calculate line properties
                     length = np.sqrt((x2-x1)**2 + (y2-y1)**2)

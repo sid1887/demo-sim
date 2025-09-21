@@ -1,0 +1,29 @@
+{
+  "model": {
+    "type": "yolov8n",
+    "path": "models/yolov8n.pt",
+    "classes": 80,
+    "input_size": [
+      640,
+      640
+    ]
+  },
+  "detection": {
+    "confidence_threshold": 0.5,
+    "nms_threshold": 0.4,
+    "max_detections": 100
+  },
+  "circuit_mapping": {
+    "person": "human_operator",
+    "laptop": "control_device",
+    "cell phone": "mobile_device",
+    "book": "manual_schematic",
+    "scissors": "wire_cutter",
+    "bottle": "component_container"
+  },
+  "processing": {
+    "preprocessing": true,
+    "postprocessing": true,
+    "visualization": false
+  }
+}
